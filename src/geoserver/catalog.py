@@ -686,7 +686,7 @@ class Catalog(object):
                 )
 
         self._cache.clear()
-        return self.get_resources(names=layer_name, workspaces=[workspace])[0]
+        #return self.get_resources(names=layer_name, workspaces=[workspace])[0]
 
     def add_granule(self, data, store, workspace=None):
         """Harvest/add a granule into an existing imagemosaic"""
