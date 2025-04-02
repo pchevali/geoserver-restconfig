@@ -577,6 +577,31 @@ class Catalog(object):
 
         return self.get_stores(names=name, workspaces=[workspace])[0]
 
+    def create_coverage_layer(
+        self,
+        name,
+        workspace=None,
+        layer_name=None,
+        source_name=None,
+    ):
+        if layer_name is None:
+            layer_name = name
+        if source_name is None:
+            source_name = name
+
+        data = f"<coverage><name>{layer_name}</name><nativeName>{source_name}</nativeName><enabled>true</enabled></coverage>"
+        url = f"{self.service_url}/workspaces/{workspace}/coveragestores/{name}/coverages"
+        headers = {"Content-type": "text/xml"}
+        resp = self.http_request(url, method="post", data=data, headers=headers)
+
+        if resp.status_code != 201:
+            raise FailedRequestError(
+                "Failed to create coverage/layer {} for : {}, {}".format(
+                    layer_name, name, resp.status_code, resp.text
+                )
+            )
+
+
     def create_coveragestore(
         self,
         name,
@@ -686,19 +711,25 @@ class Catalog(object):
                 )
 
         self._cache.clear()
-        #return self.get_resources(names=layer_name, workspaces=[workspace])[0]
-
-    def add_granule(self, data, store, workspace=None):
+        return self.get_resource(name=layer_name,store=name, workspace=workspace)
+        
+    def add_granule(self, data, store, workspace=None, data_type="file"):
         """Harvest/add a granule into an existing imagemosaic"""
-        ext = os.path.splitext(data)[-1]
-        if ext == ".zip":
-            type = "file.imagemosaic"
-            upload_data = open(data, "rb")
-            headers = {"Content-type": "application/zip", "Accept": "application/xml"}
+        if data_type=="remote":
+            type = "remote.imagemosaic"
+            upload_data = data
+            headers = {"Content-type": "text/plain"}
         else:
-            type = "external.imagemosaic"
-            upload_data = data if data.startswith("file:") else f"file:{data}"
-            headers = {"Content-type": "text/plain", "Accept": "application/xml"}
+            ext = os.path.splitext(data)[-1]
+            if ext == ".zip":
+                type = "file.imagemosaic"
+                upload_data = open(data, "rb")
+                headers = {"Content-type": "application/zip", "Accept": "application/xml"}
+            else:
+                type = "external.imagemosaic"
+                upload_data = data if data.startswith("file:") else f"file:{data}"
+                headers = {"Content-type": "text/plain", "Accept": "application/xml"}
+        
 
         params = dict()
         workspace_name = workspace
