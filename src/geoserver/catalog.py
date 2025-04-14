@@ -330,7 +330,7 @@ class Catalog(object):
         names can either be a comma delimited string or an array.
         Will return an empty list if no stores are found.
         """
-
+        logger.debug("Get stores: %s/%s", names, workspaces)
         if workspaces:
             if isinstance(workspaces, Workspace):
                 workspaces = [workspaces]
@@ -591,12 +591,41 @@ class Catalog(object):
 
         data = f"<coverage><name>{layer_name}</name><nativeName>{source_name}</nativeName><enabled>true</enabled></coverage>"
         url = f"{self.service_url}/workspaces/{workspace}/coveragestores/{name}/coverages"
+        logger.debug("Creating coverage/layer %s for %s", layer_name, name)
+        # logger.info("URL: %s", url)
+        # logger.info("Data: %s", data)
         headers = {"Content-type": "text/xml"}
         resp = self.http_request(url, method="post", data=data, headers=headers)
 
         if resp.status_code != 201:
             raise FailedRequestError(
                 "Failed to create coverage/layer {} for : {}, {}".format(
+                    layer_name, name, resp.status_code, resp.text
+                )
+            )
+
+    def update_coverage_layer(
+        self,
+        name,
+        workspace=None,
+        layer_name=None,
+        source_name=None,
+    ):
+        if layer_name is None:
+            layer_name = name
+        if source_name is None:
+            source_name = name
+        data = f"<coverage><name>{layer_name}</name><nativeName>{source_name}</nativeName><enabled>true</enabled></coverage>"
+        url = f"{self.service_url}/workspaces/{workspace}/coveragestores/{name}/coverages/{name}?calculate=nativebbox,latlonbbox,dimensions"
+        logger.debug("Update coverage/layer %s for %s", layer_name, name)
+        # logger.info("URL: %s", url)
+        # logger.info("Data: %s", data)
+        headers = {"Content-type": "text/xml"}
+        resp = self.http_request(url, method="put", data=data, headers=headers)
+
+        if resp.status_code != 200:
+            raise FailedRequestError(
+                "Failed to update coverage/layer {} for : {}, {}".format(
                     layer_name, name, resp.status_code, resp.text
                 )
             )
@@ -989,7 +1018,7 @@ class Catalog(object):
 
         if isinstance(names, string_types):
             names = [s.strip() for s in names.split(",")]
-
+        logger.debug("Get resources: %s/%s/%s", names,_stores, workspaces)
         resources = []
         for s in _stores:
             try:
