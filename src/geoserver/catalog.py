@@ -11,6 +11,8 @@
 
 import logging
 from datetime import datetime, timedelta
+
+from sympy import true
 from geoserver.layer import Layer
 from geoserver.resource import FeatureType
 from geoserver.service import service_from_index, ServiceWmsSettings
@@ -610,13 +612,23 @@ class Catalog(object):
         workspace=None,
         layer_name=None,
         source_name=None,
+        bbox=True,
+        dimensions=False,
     ):
         if layer_name is None:
             layer_name = name
         if source_name is None:
             source_name = name
+
+        strcalculate=[]
+        if bbox:
+            strcalculate.extend(["nativebbox","latlonbbox"])
+        if dimensions:
+            strcalculate.extend(["dimensions"])
+
+        calculate = ",".join(strcalculate)
         data = f"<coverage><name>{layer_name}</name><nativeName>{source_name}</nativeName><enabled>true</enabled></coverage>"
-        url = f"{self.service_url}/workspaces/{workspace}/coveragestores/{name}/coverages/{name}?calculate=nativebbox,latlonbbox,dimensions"
+        url = f"{self.service_url}/workspaces/{workspace}/coveragestores/{name}/coverages/{name}?calculate="+calculate
         logger.debug("Update coverage/layer %s for %s", layer_name, name)
         # logger.info("URL: %s", url)
         # logger.info("Data: %s", data)
