@@ -12,7 +12,6 @@
 import logging
 from datetime import datetime, timedelta
 
-from sympy import true
 from geoserver.layer import Layer
 from geoserver.resource import FeatureType
 from geoserver.service import service_from_index, ServiceWmsSettings
